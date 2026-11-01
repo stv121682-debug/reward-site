@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06402B">
+<title>ATM Rewards</title>
+<link rel="stylesheet" href="style.css">
+<style>
+#app{max-width:480px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:92px}
+.top{background:var(--g);color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.top h2{margin:0;font-size:18px;letter-spacing:.3px}.top button{background:none;border:0;color:#fff;font-size:20px;cursor:pointer}
+.pg{padding:0 14px}
+.slides{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;margin:12px 0 4px;scrollbar-width:none;border-radius:16px}
+.slides::-webkit-scrollbar{display:none}
+.slide{flex:0 0 100%;scroll-snap-align:center;border-radius:16px;background:linear-gradient(135deg,var(--g),var(--g2));color:#fff;display:flex;align-items:center;padding:14px;min-height:150px;overflow:hidden}
+.slide .tx{flex:1.1}.slide .tx b{font-size:20px;line-height:1.15;display:block}.slide .tx span{font-size:12.5px;opacity:.9;display:block;margin-top:6px}
+.slide svg{flex:1;max-width:46%;height:auto}.slide img{width:100%;height:150px;object-fit:cover;border-radius:12px}
+.dots{display:flex;justify-content:center;gap:6px;margin:6px 0}.dots i{width:7px;height:7px;border-radius:50%;background:var(--line)}.dots i.on{background:var(--g);width:18px;border-radius:5px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:10px 0}
+.stats div{background:var(--g);color:#fff;border-radius:14px;padding:12px 6px;text-align:center}.stats b{display:block;font-size:17px}.stats span{font-size:12px;opacity:.85}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0;background:var(--card);border-radius:16px;padding:12px 6px;box-shadow:0 2px 10px rgba(6,64,43,.10)}
+.g4 button{background:none;border:0;color:var(--ink);font-weight:700;font-size:12.5px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer}
+.g4 i{width:48px;height:48px;border-radius:14px;background:var(--g);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(6,64,43,.3)}
+.g4 svg{width:24px;height:24px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+h3{margin:16px 2px 6px;color:var(--g)}
+.ad{display:flex;gap:11px;background:var(--card);border-radius:16px;padding:10px;margin:10px 0;box-shadow:0 2px 10px rgba(6,64,43,.10);cursor:pointer}
+.ad .th{position:relative;width:118px;height:76px;border-radius:11px;background:var(--g);flex:none;overflow:hidden}
+.ad .th img{width:100%;height:100%;object-fit:cover;display:block}
+.ad .th i{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-style:normal;font-size:26px;text-shadow:0 2px 6px #000}
+.ad .in{display:flex;flex-direction:column;gap:5px;justify-content:center;min-width:0}.ad .in b{overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.nav{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;background:var(--card);display:grid;grid-template-columns:repeat(5,1fr);padding:6px 4px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -3px 14px rgba(6,64,43,.15);z-index:30;border-radius:18px 18px 0 0}
+.nav button{background:none;border:0;color:var(--mut);font-weight:700;font-size:11.5px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;cursor:pointer}
+.nav button.on{color:var(--g)}.nav svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav .mid{position:relative}.nav .mid i{position:absolute;top:-30px;left:50%;transform:translateX(-50%);width:58px;height:58px;border-radius:50%;background:var(--g);color:#fff;display:flex;align-items:center;justify-content:center;border:5px solid var(--card);box-shadow:0 4px 10px rgba(6,64,43,.35)}
+.nav .mid i svg{stroke:#fff}.nav .mid span{margin-top:26px}
+.auth{padding:18px 16px 40px}.ah{text-align:center}.ah h1{margin:6px 0 2px;color:var(--g)}.aart{width:190px;margin:0 auto;background:var(--g);border-radius:20px;padding:8px}
+.ph{display:flex;align-items:center;border:2px solid var(--line);border-radius:11px;background:#fffdf6;margin:5px 0 10px}.ph span{padding:0 10px;font-weight:700;color:var(--g)}.ph input{border:0;background:none;padding:12px 8px 12px 0;flex:1;min-width:0;outline:none}
+.sep{height:1px;background:var(--line);margin:12px 0}
+.menu button{display:flex;width:100%;justify-content:space-between;align-items:center;background:var(--card);border:0;border-radius:14px;padding:15px;margin:9px 0;font-weight:700;color:var(--ink);cursor:pointer;box-shadow:0 2px 8px rgba(6,64,43,.08)}
+.code{font-size:30px;font-weight:900;letter-spacing:5px;color:var(--g);text-align:center;margin:8px 0}
+#qr{display:flex;justify-content:center;margin:10px 0}#qr img,#qr canvas{border-radius:10px}
+.yt{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden}.yt iframe{width:100%;height:100%;border:0}
+.prog{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin:12px 0 6px}.prog i{display:block;height:100%;width:0;background:var(--g);transition:width .4s}
+.notice{background:#f3e3b8;color:#6b4a00;border-radius:12px;padding:8px 12px;margin:10px 0;font-weight:600;font-size:13px}
+.wd{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}.wd:last-child{border:0}
+.foot{font-size:12px;color:var(--mut);text-align:center;margin:18px 4px}
+.loading{padding:80px 0;text-align:center;color:var(--mut)}
+</style></head><body>
+<div id="app"><div class="loading">Loading…</div></div>
+<div id="mroot"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="firebase-config.js"></script>
+<script src="common.js"></script>
+<script>
+(()=>{
+'use strict';
+const S={u:null,p:null,set:Object.assign({},DEF),prod:Object.assign({},DEFP),orders:[],ads:[],views:[],clicks:[],wds:[],team:[],tab:'home'};
+const A=$('app'),M=$('mroot');
+let registering=false,busy=false,slideT=0;
+
+/* ---------- icons ---------- */
+const IC={
+ home:'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',team:'<circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M15.5 14.3c3 0 5.5 1.8 5.5 5"/>',
+ play:'<circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z"/>',share:'<circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="6" r="2.6"/><circle cx="18" cy="18" r="2.6"/><path d="M8.3 11l7.4-3.7M8.3 13l7.4 3.7"/>',
+ me:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>',
+ tg:'<path d="M21 4L3 11l6 2.5L11 20l3-4.5 5 3.7z"/><path d="M9 13.5L21 4"/>',wallet:'<rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18M16 15h2"/>',chat:'<path d="M4 5h16v11H9l-5 4z"/>',users:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M17 5.5a3 3 0 010 5.5M19 14.5c1.5.7 2.5 2.4 2.5 4.5"/>'
+};
+const ic=n=>'<svg viewBox="0 0 24 24">'+IC[n]+'</svg>';
+
+/* ---------- data helpers ---------- */
+const earned=()=>S.views.reduce((a,v)=>a+(+v.reward||0),0);
+const withdrawn=()=>S.wds.filter(w=>w.status!=='rejected').reduce((a,w)=>a+(+w.amount||0),0);
+const balance=()=>Math.max(0,Math.round((earned()-withdrawn())*100)/100);
+const doneToday=id=>S.views.some(v=>v.adId===id&&v.dayNo===dayNo());
+const authMsg=e=>{
+ const c=(e&&e.code)||'';
+ if(/wrong-password|invalid-credential|invalid-login|user-not-found/.test(c))return 'Wrong phone number or password.';
+ if(/too-many/.test(c))return 'Too many attempts. Wait a few minutes or reset your password.';
+ if(/network/.test(c))return 'No internet connection.';
+ if(/email-already/.test(c))return 'This email is already used by another account.';
+ if(/weak-password/.test(c))return 'Password is too weak (use at least 6 characters).';
+ if(/invalid-email/.test(c))return 'That email address is not valid.';
+ if(/permission/.test(c))return 'Not allowed. Please try again.';
+ if(c==='x-phone')return 'This phone number is already registered. Please log in.';
+ if(c==='x-ref')return 'That referral code does not exist.';
+ return 'Something went wrong. Please try again.';
+};
+function setBusy(b){busy=b;document.querySelectorAll('.btn').forEach(x=>{x.disabled=b;});}
+const link=u=>{u=String(u||'').trim();if(!u)return '';if(/^https?:\/\//i.test(u))return u;return 'https://t.me/'+u.replace(/^@/,'').replace(/^t\.me\//,'');};
+const openUrl=u=>{try{window.open(u,'_blank','noopener');}catch(e){location.href=u;}};
+
+/* ---------- boot ---------- */
+async function boot(){
+ if(!setupOk()){A.innerHTML='<div class="auth"><div class="card"><h3>Setup needed</h3><p>Open <b>firebase-config.js</b> and paste your Firebase web-app config, then reload.</p></div></div>';return;}
+ S.set=await getSettings();document.title=S.set.brand;
+ auth.onAuthStateChanged(async u=>{
+  S.u=u;if(registering)return;
+  if(u){try{await afterLogin();}catch(e){toast('Could not load your account. Pull to retry.',1);showAuth('login');}}
+  else{clearInterval(slideT);showAuth('login');}
+ });
+}
+async function afterLogin(){
+ const d=await db.collection('users').doc(S.u.uid).get();
+ if(!d.exists){await auth.signOut();throw new Error('no profile');}
+ S.p=d.data();await loadData();S.tab='home';render();
+}
+async function loadData(){
+ const u=S.u.uid;
+ S.set=await getSettings();
+ const [ads,views,clicks,wds,team,prod,ords]=await Promise.all([
+  db.collection('ads').get(),db.collection('views').where('uid','==',u).get(),db.collection('clicks').where('uid','==',u).get(),
+  db.collection('withdrawals').where('uid','==',u).get(),db.collection('members').where('refUid','==',u).get(),getProduct(),db.collection('orders').where('uid','==',u).get()]);
+ S.prod=prod;
+ const mp=q=>q.docs.map(d=>Object.assign({id:d.id},d.data()));
+ S.ads=mp(ads).filter(a=>a.active!==false&&a.vid).sort((a,b)=>(b.ts||0)-(a.ts||0));
+ S.views=mp(views);S.clicks=mp(clicks);S.wds=mp(wds).sort((a,b)=>(b.ts||0)-(a.ts||0));S.team=mp(team).sort((a,b)=>(b.ts||0)-(a.ts||0));S.orders=mp(ords).sort((a,b)=>(b.ts||0)-(a.ts||0));
+}
+
+/* ---------- auth screens ---------- */
+function showAuth(mode,msg){
+ closeModal();A.innerHTML=authHTML(mode);
+ if(msg)$('err').textContent=msg;
+ const ref=new URLSearchParams(location.search).get('ref');if(ref&&$('rref'))$('rref').value=ref.toUpperCase();
+}
+function authHTML(mode){
+ const s=S.set,head='<div class="ah"><div class="aart">'+atmSvg(0)+'</div><h1>'+esc(s.brand)+'</h1><p class="mut sm">Watch sponsored videos and earn rewards. No deposit needed.</p></div>';
+ const ph=(id,ph)=>'<div class="ph"><span>+91</span><input id="'+id+'" type="tel" inputmode="numeric" maxlength="14" placeholder="'+ph+'" autocomplete="tel"></div>';
+ if(mode==='reg')return '<div class="auth">'+head+'<div class="card"><h3 style="margin-top:0">Create account</h3>'+
+  '<label class="l">Full name</label><input class="inp" id="rn" maxlength="40" autocomplete="name">'+
+  '<label class="l">Phone number</label>'+ph('rp','10-digit mobile number')+
+  '<label class="l">Email (only used to reset your password)</label><input class="inp" id="re" type="email" autocomplete="email">'+
+  '<label class="l">Password</label><input class="inp" id="rpw" type="password" autocomplete="new-password" placeholder="At least 6 characters">'+
+  '<label class="l">Confirm password</label><input class="inp" id="rpw2" type="password" autocomplete="new-password">'+
+  '<div class="sep"></div><div class="b" style="color:var(--g)">Payment details for withdrawals</div><div class="mut sm" style="margin-bottom:6px">UPI ID, or full bank details (you can edit these later).</div>'+
+  '<label class="l">UPI ID</label><input class="inp" id="rupi" placeholder="name@bank" autocapitalize="off">'+
+  '<label class="l">Account holder name</label><input class="inp" id="rbh" maxlength="50"><label class="l">Bank name</label><input class="inp" id="rbn" maxlength="40">'+
+  '<label class="l">Account number</label><input class="inp" id="rba" inputmode="numeric" maxlength="18"><label class="l">IFSC code</label><input class="inp" id="rbi" maxlength="11" autocapitalize="characters">'+
+  '<label class="l">Referral code (optional)</label><input class="inp" id="rref" maxlength="8" autocapitalize="characters">'+
+  '<label class="row sm" style="align-items:flex-start;margin:6px 0"><input type="checkbox" id="rtc" style="margin-top:3px"><span>I understand that rewards are funded by advertisers, no deposit is required, and amounts can change.</span></label>'+
+  '<div class="err" id="err"></div><button class="btn full" data-a="register">Create account</button>'+
+  '<p class="c sm">Already have an account? <a href="#" data-a="auth" data-v="login">Log in</a></p></div></div>';
+ if(mode==='forgot')return '<div class="auth">'+head+'<div class="card"><h3 style="margin-top:0">Reset password</h3><p class="mut sm">Enter your phone number. We will email a reset link to the address you registered with.</p>'+
+  '<label class="l">Phone number</label>'+ph('phone','10-digit mobile number')+'<div class="err" id="err"></div><button class="btn full" data-a="forgot">Send reset link</button>'+
+  '<p class="c sm"><a href="#" data-a="auth" data-v="login">Back to login</a></p></div></div>';
+ return '<div class="auth">'+head+'<div class="card"><h3 style="margin-top:0">Log in</h3><label class="l">Phone number</label>'+ph('phone','10-digit mobile number')+
+  '<label class="l">Password</label><input class="inp" id="pw" type="password" autocomplete="current-password"><div class="err" id="err"></div>'+
+  '<button class="btn full" data-a="login">Log in</button><p class="c sm"><a href="#" data-a="auth" data-v="forgot">Forgot password?</a></p><div class="sep"></div>'+
+  '<button class="btn alt full" data-a="auth" data-v="reg">Create new account</button></div></div>';
+}
+async function doLogin(){
+ const ph=normPhone($('phone').value),pw=$('pw').value,er=$('err');er.textContent='';
+ if(!okPhone(ph))return void(er.textContent='Enter a valid 10-digit phone number.');
+ if(!pw)return void(er.textContent='Enter your password.');
+ setBusy(true);
+ try{
+  const m=await db.collection('phones').doc(ph).get();
+  if(!m.exists){er.textContent='No account found for this number. Create an account first.';return;}
+  await auth.signInWithEmailAndPassword(m.data().email,pw);
+ }catch(e){er.textContent=authMsg(e);}finally{setBusy(false);}
+}
+async function doForgot(){
+ const ph=normPhone($('phone').value),er=$('err');er.textContent='';
+ if(!okPhone(ph))return void(er.textContent='Enter a valid 10-digit phone number.');
+ setBusy(true);
+ try{
+  const m=await db.collection('phones').doc(ph).get();
+  if(!m.exists){er.textContent='No account found for this number.';return;}
+  await auth.sendPasswordResetEmail(m.data().email);
+  showAuth('login');toast('Reset link sent to '+maskEmail(m.data().email)+'. Check your inbox and spam folder.');
+ }catch(e){er.textContent=authMsg(e);}finally{setBusy(false);}
+}
+const CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+async function newCode(){
+ for(let i=0;i<8;i++){let c='';for(let k=0;k<6;k++)c+=CODECH[Math.floor(Math.random()*CODECH.length)];
+  if(!(await db.collection('refCodes').doc(c).get()).exists)return c;}
+ throw {code:'x-code'};
+}
+async function doRegister(){
+ const v=id=>($(id).value||'').trim(),er=$('err');er.textContent='';
+ const name=v('rn'),ph=normPhone(v('rp')),email=v('re').toLowerCase(),pw=$('rpw').value,pw2=$('rpw2').value,upi=v('rupi'),holder=v('rbh'),bank=v('rbn'),acc=v('rba'),ifsc=v('rbi').toUpperCase(),ref=v('rref').toUpperCase();
+ const fail=m=>{er.textContent=m;};
+ if(name.length<2)return fail('Enter your full name.');
+ if(!okPhone(ph))return fail('Enter a valid 10-digit phone number.');
+ if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return fail('Enter a valid email address.');
+ if(pw.length<6)return fail('Password must be at least 6 characters.');
+ if(pw!==pw2)return fail('Passwords do not match.');
+ const anyBank=holder||bank||acc||ifsc,fullBank=holder&&bank&&acc&&ifsc;
+ if(upi&&!/^[\w.\-]{2,}@[A-Za-z]{2,}$/.test(upi))return fail('UPI ID looks wrong (example: name@bank).');
+ if(anyBank&&!fullBank)return fail('Fill all bank fields, or leave them all empty.');
+ if(fullBank&&!/^\d{6,18}$/.test(acc))return fail('Account number must be 6 to 18 digits.');
+ if(fullBank&&!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc))return fail('IFSC code looks wrong (example: SBIN0001234).');
+ if(!upi&&!fullBank)return fail('Add a UPI ID or your bank details.');
+ if(!$('rtc').checked)return fail('Please tick the confirmation box.');
+ registering=true;setBusy(true);
+ let cred=null,madePhone=false;
+ try{
+  if((await db.collection('phones').doc(ph).get()).exists)throw {code:'x-phone'};
+  let refUid='';
+  if(ref){const r=await db.collection('refCodes').doc(ref).get();if(!r.exists)throw {code:'x-ref'};refUid=r.data().uid;}
+  cred=await auth.createUserWithEmailAndPassword(email,pw);const uid=cred.user.uid;
+  const code=await newCode(),ts=Date.now();
+  await db.collection('phones').doc(ph).set({uid,email});madePhone=true;
+  await db.collection('users').doc(uid).set({name,phone:ph,email,upi,bankHolder:holder,bankName:bank,bankAcc:acc,bankIfsc:ifsc,refCode:code,refBy:ref,refUid,ts});
+  await db.collection('refCodes').doc(code).set({uid});
+  await db.collection('members').doc(uid).set({name,refUid,ts});
+  registering=false;S.u=auth.currentUser;await afterLogin();toast('Welcome, '+name.split(' ')[0]+'!');
+ }catch(e){
+  registering=false;
+  if(cred){try{if(madePhone)await db.collection('phones').doc(ph).delete();}catch(x){}try{await cred.user.delete();}catch(x){}}
+  er.textContent=authMsg(e);
+ }finally{registering=false;setBusy(false);}
+}
+
+/* ---------- main UI ---------- */
+const TITLES={home:'',ads:'Watch & Earn',team:'My Team',share:'Invite Friends',me:'My Account'};
+function render(){
+ clearInterval(slideT);
+ const pg={home:pageHome,ads:pageAds,team:pageTeam,share:pageShare,me:pageMe}[S.tab]();
+ const nb=(t,l,i)=>'<button class="'+(S.tab===t?'on':'')+'" data-a="tab" data-v="'+t+'">'+ic(i)+'<span>'+l+'</span></button>';
+ A.innerHTML='<div class="top"><h2>'+esc(TITLES[S.tab]||S.set.brand)+'</h2><button data-a="refresh" title="Refresh">↻</button></div><div class="pg">'+
+  (S.set.notice?'<div class="notice">📢 '+esc(S.set.notice)+'</div>':'')+pg+'</div>'+
+  '<div class="nav">'+nb('home','Home','home')+nb('team','Team','team')+'<button class="mid '+(S.tab==='ads'?'on':'')+'" data-a="tab" data-v="ads"><i>'+ic('play')+'</i><span>Earn</span></button>'+nb('share','Share','share')+nb('me','My','me')+'</div>';
+ if(S.tab==='home')startSlides();
+ if(S.tab==='share')makeQR();
+ window.scrollTo(0,0);
+}
+function slidesHTML(){
+ const urls=String(S.set.banners||'').split(/\n+/).map(x=>x.trim()).filter(x=>/^https?:\/\//i.test(x));
+ const T=[['Watch sponsored videos','Short videos from real advertisers.'],['Earn rewards daily','New videos are added by the team.'],['Withdraw to UPI or bank','Request a payout any time you reach the minimum.']];
+ const sl=urls.length?urls.map(u=>'<div class="slide" style="padding:0"><img src="'+esc(u)+'" alt=""></div>').join(''):
+  T.map((t,i)=>'<div class="slide"><div class="tx"><b>'+t[0]+'</b><span>'+t[1]+'</span></div>'+atmSvg(i)+'</div>').join('');
+ const n=urls.length||3;
+ return '<div class="slides" id="slides">'+sl+'</div><div class="dots" id="dots">'+Array.from({length:n},(_,i)=>'<i class="'+(i?'':'on')+'"></i>').join('')+'</div>';
+}
+function startSlides(){
+ const el=$('slides');if(!el)return;const n=el.children.length;let i=0;
+ el.addEventListener('scroll',()=>{const k=Math.round(el.scrollLeft/el.clientWidth);document.querySelectorAll('#dots i').forEach((d,j)=>d.classList.toggle('on',j===k));i=k;});
+ slideT=setInterval(()=>{if(!$('slides'))return clearInterval(slideT);i=(i+1)%n;el.scrollTo({left:i*el.clientWidth,behavior:'smooth'});},4200);
+}
+function adsHTML(list){
+ if(!list.length)return '<div class="card c mut">No videos right now. Please check back soon.</div>';
+ return list.map(a=>{const d=doneToday(a.id);
+  return '<div class="ad" data-a="watch" data-v="'+esc(a.id)+'"><div class="th"><img src="https://i.ytimg.com/vi/'+esc(a.vid)+'/hqdefault.jpg" alt="" loading="lazy" onerror="this.style.display=\'none\'"><i>▶</i></div>'+
+  '<div class="in"><b>'+esc(a.title)+'</b><div class="mut sm">Watch '+(+a.minSec||15)+'s · reward <b>'+fmt(a.reward)+'</b></div>'+(d?'<span class="pill ok">Done today ✓</span>':'<span class="pill">Watch &amp; earn</span>')+'</div></div>';}).join('');
+}
+const DISC='<div class="foot">Rewards are paid from advertiser-funded campaigns. No deposit is ever required. Amounts and availability can change.</div>';
+function pageHome(){
+ const e=earned(),bal=balance();
+ return slidesHTML()+'<div class="stats"><div><b>'+fmt(bal)+'</b><span>Balance</span></div><div><b>'+fmt(e)+'</b><span>Total earned</span></div><div><b>'+S.team.length+'</b><span>Team size</span></div></div>'+
+  '<div class="g4"><button data-a="telegram"><i>'+ic('tg')+'</i>Telegram</button><button data-a="withdraw"><i>'+ic('wallet')+'</i>Withdraw</button><button data-a="tab" data-v="share"><i>'+ic('users')+'</i>Invite</button><button data-a="service"><i>'+ic('chat')+'</i>Service</button></div>'+
+  productCard()+'<h3>Today\'s videos</h3>'+adsHTML(S.ads.slice(0,3))+(S.ads.length>3?'<button class="btn alt full" data-a="tab" data-v="ads">View all videos</button>':'')+DISC;
+}
+function pageAds(){
+ const left=S.ads.filter(a=>!doneToday(a.id)),pot=left.reduce((s,a)=>s+(+a.reward||0),0);
+ return '<div class="card row sp"><div><b>'+left.length+' video'+(left.length===1?'':'s')+' left today</b><div class="mut sm">Watch to earn up to '+fmt(pot)+' more</div></div><span class="pill">'+fmt(balance())+'</span></div>'+adsHTML(S.ads)+DISC;
+}
+function pageTeam(){
+ const list=S.team.length?S.team.map(m=>'<div class="wd"><div><b>'+esc(m.name)+'</b><div class="mut sm">Joined '+fdate(m.ts)+'</div></div><span class="pill ok">Member</span></div>').join(''):'<div class="c mut" style="padding:18px 0">Nobody has joined with your code yet.<br>Share your code from the Share tab.</div>';
+ return '<div class="stats"><div><b>'+S.team.length+'</b><span>People invited</span></div><div><b>'+esc(S.p.refCode)+'</b><span>Your code</span></div><div><b>'+S.ads.length+'</b><span>Videos live</span></div></div><div class="card"><h3 style="margin-top:0">Members</h3>'+list+'</div>';
+}
+const refLink=()=>location.origin+location.pathname.replace(/[^/]*$/,'')+'?ref='+S.p.refCode;
+function pageShare(){
+ return '<div class="card c"><div class="mut sm">Your referral code</div><div class="code">'+esc(S.p.refCode)+'</div><div id="qr"></div>'+
+  '<div class="sm mut" style="word-break:break-all">'+esc(refLink())+'</div><div class="row wrap" style="justify-content:center;margin-top:12px"><button class="btn s" data-a="copycode">Copy code</button><button class="btn s" data-a="copylink">Copy link</button><button class="btn s" data-a="wshare">Share on WhatsApp</button></div></div>'+
+  '<div class="foot">Friends who sign up with your code or link appear in your Team tab.</div>';
+}
+function makeQR(){
+ const el=$('qr');if(!el)return;
+ if(window.QRCode){try{new QRCode(el,{text:refLink(),width:190,height:190,colorDark:'#06402B',colorLight:'#F8F2E3'});return;}catch(e){}}
+ el.innerHTML='<div class="mut sm">QR code could not load. Use the link below.</div>';
+}
+function pageMe(){
+ const p=S.p;
+ return '<div class="card"><div class="b" style="font-size:18px">'+esc(p.name)+'</div><div class="mut sm">+91 '+esc(p.phone)+' · '+esc(p.email)+'</div></div>'+
+  '<div class="stats"><div><b>'+fmt(balance())+'</b><span>Balance</span></div><div><b>'+fmt(earned())+'</b><span>Earned</span></div><div><b>'+fmt(withdrawn())+'</b><span>Withdrawn</span></div></div>'+
+  '<div class="menu"><button data-a="withdraw"><span>Withdraw</span><span>›</span></button><button data-a="orders"><span>My orders</span><span>›</span></button><button data-a="history"><span>Withdrawal history</span><span>›</span></button><button data-a="paydetails"><span>Payment details</span><span>›</span></button><button data-a="about"><span>About us</span><span>›</span></button><button data-a="signout"><span>Sign out</span><span>›</span></button></div>'+DISC;
+}
+
+/* ---------- modals ---------- */
+function modal(html){M.innerHTML='<div class="modalbg" data-a="bg"><div class="modal">'+html+'</div></div>';}
+function closeModal(){stopWatch();stopPay();M.innerHTML='';}
+const mh=t=>'<div class="mh"><b style="font-size:17px">'+t+'</b><button data-a="close">✕</button></div>';
+
+/* watch + earn */
+let yt=null,wTimer=0,wSec=0,wAd=null,wDone=false;
+function loadYT(){
+ return new Promise((res,rej)=>{
+  if(window.YT&&YT.Player)return res();
+  const prev=window.onYouTubeIframeAPIReady;window.onYouTubeIframeAPIReady=()=>{if(prev)prev();res();};
+  const s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';s.onerror=rej;document.head.appendChild(s);setTimeout(()=>rej(),12000);
+ });
+}
+function stopWatch(){clearInterval(wTimer);wTimer=0;try{if(yt&&yt.destroy)yt.destroy();}catch(e){}yt=null;}
+async function logClick(ad){
+ const day=dayNo();if(S.clicks.some(c=>c.adId===ad.id&&c.dayNo===day))return;
+ const rec={uid:S.u.uid,adId:ad.id,dayNo:day,ts:Date.now()};
+ try{await db.collection('clicks').doc(S.u.uid+'_'+ad.id+'_'+day).set(rec);S.clicks.push(rec);}catch(e){}
+}
+function openWatch(id){
+ const ad=S.ads.find(a=>a.id===id);if(!ad)return;
+ wAd=ad;wSec=0;wDone=doneToday(id);
+ modal(mh(esc(ad.title))+'<div class="yt" id="ytbox"></div><div class="prog"><i id="pbar"></i></div><div id="wst" class="sm b"></div><div class="mut sm" style="margin-top:6px">Press play and keep the video playing. Time only counts while it is playing and this screen is open.</div>');
+ logClick(ad);updW();
+ loadYT().then(()=>{
+  if(!$('ytbox')||wAd!==ad)return;
+  yt=new YT.Player('ytbox',{videoId:ad.vid,width:'100%',height:'100%',playerVars:{rel:0,playsinline:1,modestbranding:1}});
+  clearInterval(wTimer);wTimer=setInterval(()=>{if(yt&&yt.getPlayerState&&yt.getPlayerState()===1&&!document.hidden){wSec++;updW();}},1000);
+ }).catch(()=>{const w=$('wst');if(w)w.textContent='Video could not load. Check your internet and try again.';});
+}
+function needSec(){let n=+wAd.minSec||15;try{const d=yt&&yt.getDuration&&yt.getDuration();if(d>0)n=Math.min(n,Math.max(3,Math.floor(d)-1));}catch(e){}return n;}
+function updW(){
+ const w=$('wst');if(!w||!wAd)return;const need=needSec();
+ const pb=$('pbar');if(pb)pb.style.width=Math.min(100,wDone?100:wSec/need*100)+'%';
+ if(wDone){w.innerHTML='✅ Reward '+fmt(wAd.reward)+' added'+(doneToday(wAd.id)?'':'…');return;}
+ w.textContent='Watched '+Math.min(wSec,need)+' / '+need+' seconds · reward '+fmt(wAd.reward);
+ if(wSec>=need){wDone=true;claim(wAd);}
+}
+async function claim(ad){
+ const day=dayNo(),rec={uid:S.u.uid,adId:ad.id,reward:+ad.reward||0,dayNo:day,ts:Date.now()};
+ try{
+  await db.collection('views').doc(S.u.uid+'_'+ad.id+'_'+day).set(rec);S.views.push(rec);toast('Reward added: '+fmt(rec.reward));updW();
+  if(S.tab==='home'||S.tab==='ads'||S.tab==='me')render();
+ }catch(e){wDone=false;wSec=0;toast('Could not add the reward. Check your phone date and time, then watch again.',1);}
+}
+
+/* withdraw */
+function openWithdraw(){
+ const p=S.p,bal=balance(),min=+S.set.minWithdraw||0,hasU=!!p.upi,hasB=!!(p.bankAcc&&p.bankIfsc);
+ if(!hasU&&!hasB)return openPay(true);
+ const pend=S.wds.find(w=>w.status==='pending');
+ modal(mh('Withdraw')+'<div class="card c"><div class="mut sm">Available balance</div><div class="code" style="letter-spacing:0">'+fmt(bal)+'</div><div class="mut sm">Minimum withdrawal '+fmt(min)+'</div></div>'+
+  (pend?'<div class="notice">You already have a pending request for '+fmt(pend.amount)+'. Wait until it is paid.</div>':
+  '<label class="l">Amount (₹)</label><input class="inp" id="wa" type="number" inputmode="decimal" min="'+min+'" max="'+bal+'" placeholder="Enter amount">'+
+  '<label class="l">Send money to</label><select class="inp" id="wm">'+(hasU?'<option value="upi">UPI: '+esc(p.upi)+'</option>':'')+(hasB?'<option value="bank">Bank: '+esc(p.bankName)+' ····'+esc(String(p.bankAcc).slice(-4))+'</option>':'')+'</select>'+
+  '<div class="err" id="werr"></div><button class="btn full" data-a="dowithdraw">Request withdrawal</button><p class="mut sm c">The team reviews the request and pays it manually to the account you selected.</p>'));
+}
+async function doWithdraw(){
+ const bal=balance(),min=+S.set.minWithdraw||0,amt=Math.round(parseFloat($('wa').value)*100)/100,m=$('wm').value,er=$('werr');er.textContent='';
+ if(!(amt>0))return void(er.textContent='Enter an amount.');
+ if(amt<min)return void(er.textContent='Minimum withdrawal is '+fmt(min)+'.');
+ if(amt>bal)return void(er.textContent='You only have '+fmt(bal)+' available.');
+ const p=S.p,rec={uid:S.u.uid,name:p.name,phone:p.phone,amount:amt,method:m,upi:m==='upi'?p.upi:'',bankHolder:m==='bank'?p.bankHolder:'',bankName:m==='bank'?p.bankName:'',bankAcc:m==='bank'?p.bankAcc:'',bankIfsc:m==='bank'?p.bankIfsc:'',status:'pending',note:'',ts:Date.now()};
+ setBusy(true);
+ try{const r=await db.collection('withdrawals').add(rec);S.wds.unshift(Object.assign({id:r.id},rec));closeModal();render();toast('Withdrawal requested');}
+ catch(e){er.textContent=authMsg(e);}finally{setBusy(false);}
+}
+function openHistory(){
+ modal(mh('Withdrawal history')+(S.wds.length?S.wds.map(w=>'<div class="wd"><div><b>'+fmt(w.amount)+'</b> <span class="mut sm">'+(w.method==='upi'?'UPI':'Bank')+'</span><div class="mut sm">'+fdate(w.ts)+(w.note?' · '+esc(w.note):'')+'</div></div><span class="pill '+(w.status==='paid'?'ok':w.status==='rejected'?'r':'p')+'">'+esc(w.status)+'</span></div>').join(''):'<div class="c mut" style="padding:20px">No withdrawals yet.</div>'));
+}
+function openPay(first){
+ const p=S.p,i=(id,l,v,ex)=>'<label class="l">'+l+'</label><input class="inp" id="'+id+'" value="'+esc(v||'')+'" '+(ex||'')+'>';
+ modal(mh('Payment details')+(first?'<div class="notice">Add your payment details to request a withdrawal.</div>':'')+i('pu','UPI ID',p.upi,'autocapitalize="off"')+i('pbh','Account holder name',p.bankHolder)+i('pbn','Bank name',p.bankName)+i('pba','Account number',p.bankAcc,'inputmode="numeric" maxlength="18"')+i('pbi','IFSC code',p.bankIfsc,'maxlength="11" autocapitalize="characters"')+
+  '<div class="err" id="perr"></div><button class="btn full" data-a="savepay">Save</button>');
+}
+async function savePay(){
+ const v=id=>($(id).value||'').trim(),er=$('perr');er.textContent='';
+ const upi=v('pu'),holder=v('pbh'),bank=v('pbn'),acc=v('pba'),ifsc=v('pbi').toUpperCase(),anyB=holder||bank||acc||ifsc,full=holder&&bank&&acc&&ifsc;
+ if(upi&&!/^[\w.\-]{2,}@[A-Za-z]{2,}$/.test(upi))return void(er.textContent='UPI ID looks wrong (example: name@bank).');
+ if(anyB&&!full)return void(er.textContent='Fill all bank fields, or leave them all empty.');
+ if(full&&!/^\d{6,18}$/.test(acc))return void(er.textContent='Account number must be 6 to 18 digits.');
+ if(full&&!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc))return void(er.textContent='IFSC code looks wrong.');
+ if(!upi&&!full)return void(er.textContent='Add a UPI ID or your bank details.');
+ setBusy(true);
+ try{const u={upi,bankHolder:holder,bankName:bank,bankAcc:acc,bankIfsc:ifsc};await db.collection('users').doc(S.u.uid).update(u);Object.assign(S.p,u);closeModal();render();toast('Saved');}
+ catch(e){er.textContent=authMsg(e);}finally{setBusy(false);}
+}
+
+/* ---------- store: dynamic product price, UPI pay + confirm ---------- */
+const priceOf=p=>Math.round((+p.price||0)*100)/100;
+const priceTxt=p=>priceOf(p)>0?fmt(priceOf(p)):'FREE';
+const recentPending=()=>S.orders.some(o=>o.status==='pending'&&o.via==='payconfirm'&&Date.now()-o.ts<14*60000);
+function productCard(){
+ const p=S.prod;if(!p||p.active!==true)return '';
+ const own=S.orders.some(o=>o.status==='confirmed');
+ return '<h3>Store</h3><div class="card row sp"><div style="min-width:0"><b>'+esc(p.name)+'</b><div class="mut sm">'+esc(p.desc||'')+'</div></div><div class="c" style="flex:none"><div class="b" style="color:var(--g);font-size:19px;margin-bottom:4px">'+priceTxt(p)+'</div>'+
+  (own?'<span class="pill ok">Purchased ✓</span>':'<button class="btn s" data-a="buy">'+(priceOf(p)>0?(recentPending()?'Resume payment':'Buy now'):'Get free')+'</button>')+'</div></div>';
+}
+function openBuy(){
+ const p=S.prod;if(!p||p.active!==true)return void toast('Not available right now',1);
+ if(S.orders.some(o=>o.status==='confirmed'))return void toast('You already own this');
+ if(priceOf(p)<=0)return void modal(mh(esc(p.name))+'<p>'+esc(p.desc||'')+'</p><div class="card c"><div class="mut sm">Price</div><div class="code" style="letter-spacing:0">FREE</div></div><div class="err" id="berr"></div><button class="btn full" data-a="dobuy">Get it free</button>');
+ modal(mh(esc(p.name))+'<div class="card c mut">Preparing your payment…</div>');startPay();
+}
+async function doBuy(){ // free product only
+ const p=S.prod,er=$('berr');er.textContent='';
+ if(priceOf(p)>0)return;
+ const rec={uid:S.u.uid,name:S.p.name,phone:S.p.phone,product:p.name,amount:0,utr:'',status:'confirmed',note:'Free',ts:Date.now()};
+ setBusy(true);
+ try{const ref=db.collection('orders').doc();await ref.set(rec);S.orders.unshift(Object.assign({id:ref.id},rec));closeModal();render();toast('Done! Unlocked.');}
+ catch(e){try{await loadData();}catch(x){}render();toast('The price just changed. Please check and try again.',1);}
+ finally{setBusy(false);}
+}
+/* PayConfirm: server creates the payment, webhook confirms it, we poll the order doc */
+let payT=0,payOrd='',payInfo=null;
+function stopPay(){clearInterval(payT);payT=0;}
+async function startPay(){
+ try{
+  const t=await auth.currentUser.getIdToken();
+  const r=await fetch('/api/create-payment',{method:'POST',headers:{Authorization:'Bearer '+t}});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.error||'Could not start payment.');
+  payOrd=j.orderId;payInfo=j;
+  modal(mh(esc(S.prod.name))+'<div class="card c"><div class="mut sm">Pay exactly</div><div class="code" style="letter-spacing:0">'+fmt(j.amount)+'</div><div id="uqr" style="display:flex;justify-content:center;margin:8px 0"></div>'+
+   '<button class="btn full" data-a="payapp">Pay with UPI app</button><div class="mut sm" style="margin-top:8px">Scan the QR with any UPI app, or <a href="'+esc(j.payUrl)+'" target="_blank" rel="noopener">open the payment page</a></div></div>'+
+   '<div id="pst" class="c b" style="color:var(--g)">⏳ Waiting for your payment…</div><p class="mut sm c">Pay the exact amount (with paise) within 14 minutes. This screen unlocks by itself. Paid but not unlocked? The team will verify it shortly.</p>');
+  const el=$('uqr');if(el&&window.QRCode){try{new QRCode(el,{text:j.upiLink,width:170,height:170,colorDark:'#06402B',colorLight:'#F8F2E3'});}catch(e){}}
+  stopPay();payT=setInterval(pollPay,4000);
+ }catch(e){modal(mh('Payment')+'<div class="err">'+esc(e.message||'Could not start payment.')+'</div><button class="btn full" data-a="buy">Try again</button>');}
+}
+async function pollPay(){
+ if(!payOrd||!$('pst'))return stopPay();
+ try{const d=await db.collection('orders').doc(payOrd).get();
+  if(d.exists&&d.data().status==='confirmed'){stopPay();await loadData();closeModal();render();toast('Payment confirmed! Unlocked.');}
+ }catch(e){}
+}
+function openOrders(){
+ modal(mh('My orders')+(S.orders.length?S.orders.map(o=>'<div class="wd"><div><b>'+esc(o.product)+'</b> <span class="mut sm">'+(+o.amount>0?fmt(o.amount):'Free')+'</span><div class="mut sm">'+fdate(o.ts)+(o.utr?' · UTR '+esc(o.utr):'')+(o.note?' · '+esc(o.note):'')+'</div></div><span class="pill '+(o.status==='confirmed'?'ok':o.status==='rejected'?'r':'p')+'">'+esc(o.status==='confirmed'?'paid':o.status)+'</span></div>').join(''):'<div class="c mut" style="padding:20px">No orders yet.</div>'));
+}
+
+/* ---------- actions ---------- */
+const copy=async(t,m)=>{try{await navigator.clipboard.writeText(t);toast(m||'Copied');}catch(e){prompt('Copy this:',t);}};
+function act(a,v,el){
+ switch(a){
+  case 'auth':showAuth(v);break;
+  case 'login':doLogin();break;case 'register':doRegister();break;case 'forgot':doForgot();break;
+  case 'tab':closeModal();S.tab=v;render();break;
+  case 'refresh':loadData().then(()=>{render();toast('Updated');}).catch(()=>toast('Could not refresh',1));break;
+  case 'watch':openWatch(v);break;
+  case 'telegram':{const u=link(S.set.telegram);if(u)openUrl(u);else toast('Telegram link is not set yet',1);break;}
+  case 'service':{const n=String(S.set.whatsapp||'').replace(/\D/g,'');if(n)openUrl('https://wa.me/'+n+'?text='+encodeURIComponent(S.set.waMsg||'hii'));else toast('WhatsApp number is not set yet',1);break;}
+  case 'withdraw':openWithdraw();break;case 'dowithdraw':doWithdraw();break;
+  case 'buy':openBuy();break;case 'dobuy':doBuy();break;case 'orders':openOrders();break;
+  case 'payapp':if(payInfo)location.href=payInfo.upiLink;break;
+  case 'history':openHistory();break;case 'paydetails':openPay(false);break;case 'savepay':savePay();break;
+  case 'about':modal(mh('About us')+'<p><b>'+esc(S.set.brand)+'</b> shows sponsored videos from advertisers. You can earn small rewards for watching them. Rewards are paid from advertiser-funded campaigns, and you never need to deposit any money.</p><p class="mut sm">Reward amounts, video availability and the minimum withdrawal can change. Withdrawals are reviewed and paid manually by the team.</p>');break;
+  case 'copycode':copy(S.p.refCode,'Code copied');break;case 'copylink':copy(refLink(),'Link copied');break;
+  case 'wshare':openUrl('https://wa.me/?text='+encodeURIComponent('Join '+S.set.brand+' and earn rewards by watching videos. Use my code '+S.p.refCode+': '+refLink()));break;
+  case 'signout':auth.signOut();break;
+  case 'close':closeModal();break;
+  case 'bg':if(el===event.target)closeModal();break;
+ }
+}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t)return;if(t.tagName==='A')e.preventDefault();if(busy&&t.classList.contains('btn'))return;act(t.dataset.a,t.dataset.v,t);});
+document.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.target.tagName!=='INPUT'||e.target.type==='checkbox')return;const b=document.querySelector('.auth .btn[data-a="login"],.auth .btn[data-a="forgot"]');if(b&&!document.querySelector('#rn'))b.click();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.u&&S.p&&!wTimer)loadData().then(()=>{if(!M.innerHTML)render();}).catch(()=>{});});
+
+window.__dbg={S,act,earned,balance,get registering(){return registering;}};
+boot();
+})();
+</script></body></html>

@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function today() { return math.floor(request.time.toMillis() / 86400000); }
+
+    // Admin accounts: create the doc by hand in the console (doc id = admin's UID).
+    match /admins/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list, write: if false;
+    }
+
+    // Brand name, Telegram link, WhatsApp number, etc.
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Phone number -> login email lookup (get only, no listing).
+    match /phones/{phone} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.keys().hasOnly(['uid', 'email']);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // Referral code -> owner lookup.
+    match /refCodes/{code} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if signedIn() && request.auth.uid == uid;
+      // customers may only change their payment details
+      allow update: if signedIn() && request.auth.uid == uid
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['upi', 'bankHolder', 'bankName', 'bankAcc', 'bankIfsc']);
+    }
+
+    match /members/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || resource.data.refUid == request.auth.uid || isAdmin());
+      allow create: if signedIn() && request.auth.uid == uid;
+    }
+
+    match /ads/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // One click doc per user / ad / day. Create-only.
+    match /clicks/{id} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if signedIn()
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.dayNo == today()
+                    && id == request.auth.uid + '_' + request.resource.data.adId + '_' + string(request.resource.data.dayNo);
+    }
+
+    // One reward doc per user / ad / day. Reward must equal the ad's current reward.
+    match /views/{id} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if signedIn()
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.dayNo == today()
+                    && id == request.auth.uid + '_' + request.resource.data.adId + '_' + string(request.resource.data.dayNo)
+                    && request.resource.data.reward == get(/databases/$(database)/documents/ads/$(request.resource.data.adId)).data.reward;
+    }
+
+    // Product orders.
+    // Paid orders are created ONLY by the server (/api/create-payment) and confirmed by the PayConfirm webhook
+    // (Admin SDK bypasses rules). Customers can only create a FREE order, and only while the product price is 0.
+    match /orders/{id} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if signedIn()
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.amount == 0
+                    && request.resource.data.status == 'confirmed'
+                    && get(/databases/$(database)/documents/settings/product).data.price == 0
+                    && get(/databases/$(database)/documents/settings/product).data.active == true;
+      allow update: if isAdmin();
+    }
+
+    match /withdrawals/{id} {
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if signedIn()
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.amount is number
+                    && request.resource.data.amount >= get(/databases/$(database)/documents/settings/app).data.minWithdraw;
+      allow update: if isAdmin();
+    }
+  }
+}

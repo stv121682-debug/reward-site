@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06402B">
+<title>Admin Dashboard</title>
+<link rel="stylesheet" href="style.css">
+<style>
+body{font-size:14px}
+#app{max-width:1100px;margin:0 auto;padding:0 14px 40px}
+.bar{background:var(--g);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.bar h2{margin:0;font-size:18px}.bar button{background:none;border:1px solid #fff6;color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:700}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin:12px 0}.tabs button{border:0;background:var(--card);color:var(--g);font-weight:800;padding:10px 16px;border-radius:12px;cursor:pointer;white-space:nowrap}.tabs button.on{background:var(--g);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+.k{background:var(--g);color:#fff;border-radius:14px;padding:14px}.k b{display:block;font-size:22px}.k span{font-size:12px;opacity:.85}
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden}
+th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}th{background:var(--g3);color:var(--g);font-size:12px;text-transform:uppercase}
+.tw{overflow-x:auto;margin:8px 0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:560px){.two{grid-template-columns:1fr}}
+.login{max-width:380px;margin:60px auto}
+.fl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.thumb{width:84px;height:52px;object-fit:cover;border-radius:8px;background:var(--g)}
+</style></head><body>
+<div id="app"><div class="c mut" style="padding:80px">Loading…</div></div>
+<div id="mroot"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="common.js"></script>
+<script>
+(()=>{
+'use strict';
+const A=$('app'),M=$('mroot');
+const D={prod:Object.assign({},DEFP),orders:[],users:[],ads:[],views:[],clicks:[],wds:[],set:Object.assign({},DEF),tab:'over',wf:'pending',q:'',loaded:false};
+let me=null;
+
+function boot(){
+ if(!setupOk()){A.innerHTML='<div class="card" style="margin-top:40px"><h3>Setup needed</h3><p>Fill in <b>firebase-config.js</b> first.</p></div>';return;}
+ auth.onAuthStateChanged(async u=>{
+  me=u;if(!u)return loginUI();
+  try{
+   const a=await db.collection('admins').doc(u.uid).get();
+   if(!a.exists){await auth.signOut();return loginUI('This account is not an admin.');}
+   const s=await db.collection('settings').doc('app').get();
+   if(!s.exists)await db.collection('settings').doc('app').set(DEF);
+   const pr=await db.collection('settings').doc('product').get();
+   if(!pr.exists)await db.collection('settings').doc('product').set(DEFP);
+   await load();render();
+  }catch(e){loginUI('Could not open dashboard: '+(e.code||e.message));}
+ });
+}
+function loginUI(msg){
+ A.innerHTML='<div class="login card"><h2 style="color:var(--g);margin-top:0">Admin login</h2><label class="l">Email</label><input class="inp" id="em" type="email" autocomplete="username"><label class="l">Password</label><input class="inp" id="pw" type="password" autocomplete="current-password"><div class="err" id="err">'+esc(msg||'')+'</div><button class="btn full" id="go">Log in</button></div>';
+ const go=async()=>{try{$('err').textContent='';await auth.signInWithEmailAndPassword($('em').value.trim(),$('pw').value);}catch(e){$('err').textContent='Wrong email or password.';}};
+ $('go').onclick=go;$('pw').onkeydown=e=>{if(e.key==='Enter')go();};
+}
+async function load(){
+ const g=n=>db.collection(n).get().then(q=>q.docs.map(d=>Object.assign({id:d.id},d.data())));
+ const [users,ads,views,clicks,wds,s,prod,ords]=await Promise.all([g('users'),g('ads'),g('views'),g('clicks'),g('withdrawals'),getSettings(),getProduct(),g('orders')]);
+ D.prod=prod;D.orders=ords.sort((a,b)=>(b.ts||0)-(a.ts||0));
+ D.users=users;D.ads=ads.sort((a,b)=>(b.ts||0)-(a.ts||0));D.views=views;D.clicks=clicks;D.wds=wds.sort((a,b)=>(b.ts||0)-(a.ts||0));D.set=s;D.loaded=true;
+}
+const sum=(a,f)=>a.reduce((s,x)=>s+(+x[f]||0),0);
+const userBal=uid=>Math.round((sum(D.views.filter(v=>v.uid===uid),'reward')-sum(D.wds.filter(w=>w.uid===uid&&w.status!=='rejected'),'amount'))*100)/100;
+const T=[['over','Overview'],['prod','Product'],['ord','Orders'],['ads','Ads'],['wd','Withdrawals'],['users','Users'],['set','Settings']];
+function render(){
+ const pend=D.wds.filter(w=>w.status==='pending').length,pendO=D.orders.filter(o=>o.status==='pending').length;
+ A.innerHTML='<div class="bar" style="margin:0 -14px"><h2>'+esc(D.set.brand)+' · Admin</h2><button data-a="reload">Refresh</button><button data-a="out">Sign out</button></div>'+
+  '<div class="tabs">'+T.map(t=>'<button class="'+(D.tab===t[0]?'on':'')+'" data-a="tab" data-v="'+t[0]+'">'+t[1]+(t[0]==='wd'&&pend?' ('+pend+')':'')+(t[0]==='ord'&&pendO?' ('+pendO+')':'')+'</button>').join('')+'</div>'+
+  ({over,prod:prodTab,ord:ordTab,ads,wd,users,set})[D.tab]();
+}
+function over(){
+ const paid=D.wds.filter(w=>w.status==='paid'),pend=D.wds.filter(w=>w.status==='pending');
+ return '<div class="grid"><div class="k"><b>'+D.users.length+'</b><span>Customers</span></div><div class="k"><b>'+D.ads.filter(a=>a.active!==false).length+'</b><span>Live ads</span></div><div class="k"><b>'+D.clicks.length+'</b><span>Total ad clicks</span></div><div class="k"><b>'+D.views.length+'</b><span>Completed views</span></div><div class="k"><b>'+fmt(sum(D.views,'reward'))+'</b><span>Rewards credited</span></div><div class="k"><b>'+fmt(sum(pend,'amount'))+'</b><span>Pending payouts ('+pend.length+')</span></div><div class="k"><b>'+fmt(sum(paid,'amount'))+'</b><span>Paid out</span></div><div class="k"><b>'+D.orders.filter(o=>o.status==="pending").length+'</b><span>Orders to verify</span></div><div class="k"><b>'+fmt(sum(D.orders.filter(o=>o.status==="confirmed"),'amount'))+'</b><span>Sales confirmed</span></div></div>'+
+ '<div class="card"><b>Top ads by clicks</b>'+adTable(D.ads.slice().sort((a,b)=>cl(b.id)-cl(a.id)).slice(0,5),true)+'</div>';
+}
+const cl=id=>D.clicks.filter(c=>c.adId===id).length,vw=id=>D.views.filter(v=>v.adId===id);
+function adTable(list,ro){
+ if(!list.length)return '<div class="mut c" style="padding:16px">No ads yet.</div>';
+ return '<div class="tw"><table><tr><th></th><th>Ad</th><th>Reward</th><th>Min sec</th><th>Clicks</th><th>Unique users</th><th>Completed</th>'+(ro?'':'<th>Status</th><th></th>')+'</tr>'+
+ list.map(a=>{const v=vw(a.id),cu=new Set(D.clicks.filter(c=>c.adId===a.id).map(c=>c.uid)).size;
+  return '<tr><td><img class="thumb" src="https://i.ytimg.com/vi/'+esc(a.vid)+'/mqdefault.jpg" alt=""></td><td><b>'+esc(a.title)+'</b><div class="mut sm">'+esc(a.url||'')+'</div></td><td>'+fmt(a.reward)+'</td><td>'+(+a.minSec||15)+'</td><td><b>'+cl(a.id)+'</b></td><td>'+cu+'</td><td>'+v.length+' ('+fmt(sum(v,'reward'))+')</td>'+
+  (ro?'':'<td><span class="pill '+(a.active===false?'r':'ok')+'">'+(a.active===false?'Off':'Live')+'</span></td><td style="white-space:nowrap"><button class="btn s alt" data-a="editad" data-v="'+a.id+'">Edit</button> <button class="btn s alt" data-a="togad" data-v="'+a.id+'">'+(a.active===false?'Turn on':'Turn off')+'</button> <button class="btn s red" data-a="delad" data-v="'+a.id+'">Delete</button></td>')+'</tr>';}).join('')+'</table></div>';
+}
+function ads(){return '<div class="fl"><button class="btn" data-a="newad">+ Add ad (YouTube link)</button></div>'+adTable(D.ads,false);}
+function adForm(a){
+ a=a||{};
+ M.innerHTML='<div class="modalbg" data-a="bg"><div class="modal"><div class="mh"><b>'+(a.id?'Edit ad':'Add ad')+'</b><button data-a="close">✕</button></div>'+
+ '<label class="l">Title</label><input class="inp" id="at" maxlength="80" value="'+esc(a.title||'')+'">'+
+ '<label class="l">YouTube link</label><input class="inp" id="au" placeholder="https://www.youtube.com/watch?v=..." value="'+esc(a.url||'')+'">'+
+ '<div class="two"><div><label class="l">Reward per view (₹)</label><input class="inp" id="ar" type="number" step="0.01" min="0" value="'+(a.reward!=null?a.reward:1)+'"></div><div><label class="l">Min watch seconds</label><input class="inp" id="as" type="number" min="3" value="'+(a.minSec||15)+'"></div></div>'+
+ '<div class="err" id="err"></div><button class="btn full" data-a="savead" data-v="'+(a.id||'')+'">Save</button></div></div>';
+}
+async function saveAd(id){
+ const t=$('at').value.trim(),u=$('au').value.trim(),r=Math.round(parseFloat($('ar').value)*100)/100,s=Math.floor(+$('as').value),vid=ytId(u),er=$('err');
+ if(!t)return void(er.textContent='Enter a title.');if(!vid)return void(er.textContent='That is not a valid YouTube link.');if(!(r>=0))return void(er.textContent='Enter the reward.');if(!(s>=3))return void(er.textContent='Minimum watch time is 3 seconds.');
+ const rec={title:t,url:u,vid,reward:r,minSec:s};
+ try{
+  if(id){await db.collection('ads').doc(id).update(rec);}
+  else{rec.active=true;rec.ts=Date.now();await db.collection('ads').add(rec);}
+  M.innerHTML='';await load();render();toast('Saved');
+ }catch(e){er.textContent='Could not save: '+(e.code||e.message);}
+}
+function prodTab(){
+ const p=D.prod,i=(id,l,v,ex)=>'<label class="l">'+l+'</label><input class="inp" id="'+id+'" value="'+esc(v==null?'':v)+'" '+(ex||'')+'>';
+ return '<div class="card" style="max-width:620px"><b>Product &amp; price</b><div class="mut sm" style="margin:4px 0 10px">Set the price any time. Customers always see the current price. Set it to 0 to make the product free.</div>'+
+  i('pn','Product name',p.name)+'<label class="l">Description</label><textarea class="inp" id="pd" rows="3">'+esc(p.desc||'')+'</textarea>'+
+  i('pp','Price (₹) – 0 = free',p.price,'type="number" step="0.01" min="0"')+
+  '<div class="mut sm" style="margin-bottom:8px">Payments go to the UPI ID set in your PayConfirm server.</div>'+
+  '<label class="row" style="margin:8px 0"><input type="checkbox" id="pa" '+(p.active===true?'checked':'')+'><span class="b">Show product in the customer app</span></label>'+
+  '<div class="err" id="err"></div><button class="btn full" data-a="saveprod">Save product</button></div>';
+}
+async function saveProd(){
+ const price=Math.round(parseFloat($('pp').value)*100)/100,er=$('err');er.textContent='';
+ if(!(price>=0))return void(er.textContent='Enter a valid price (0 or more).');
+ const n={name:$('pn').value.trim()||DEFP.name,desc:$('pd').value.trim(),price,active:$('pa').checked};
+ try{await db.collection('settings').doc('product').set(n);D.prod=n;render();toast('Product saved');}catch(e){er.textContent='Could not save: '+(e.code||e.message);}
+}
+function ordTab(){
+ const list=D.orders;
+ return list.length?'<div class="tw"><table><tr><th>Date</th><th>Customer</th><th>Product</th><th>Amount</th><th>Pay / UTR</th><th>Status</th></tr>'+list.map(o=>'<tr><td>'+fdate(o.ts)+'</td><td><b>'+esc(o.name)+'</b><div class="mut sm">'+esc(o.phone)+'</div></td><td>'+esc(o.product)+'</td><td><b>'+(+o.amount>0?fmt(o.amount):'Free')+'</b></td><td>'+(o.payAmount?'<div>'+fmt(o.payAmount)+'</div>':'')+'<div class="mut sm">'+esc(o.utr||'')+'</div></td><td>'+((o.status==='pending'||o.status==='expired')?(o.status==='expired'?'<span class="pill r">expired</span> ':'')+'<button class="btn s" data-a="oconf" data-v="'+o.id+'">Mark paid</button> <button class="btn s red" data-a="orej" data-v="'+o.id+'">Reject</button>':'<span class="pill '+(o.status==='confirmed'?'ok':'r')+'">'+(o.status==='confirmed'?'paid':o.status)+'</span>'+(o.note?'<div class="mut sm">'+esc(o.note)+'</div>':''))+'</td></tr>').join('')+'</table></div>':'<div class="card c mut">No orders yet.</div>';
+}
+async function setOrd(id,status){
+ const o=D.orders.find(x=>x.id===id);if(!o)return;let note='';
+ if(status==='rejected'){note=prompt('Reason (shown to customer):','')||'';}
+ else if(!confirm('Only confirm after checking your bank. Did you receive '+fmt(o.payAmount||o.amount)+(o.utr?' (UTR '+o.utr+')':'')+'?'))return;
+ try{await db.collection('orders').doc(id).update({status,note,doneTs:Date.now()});o.status=status;o.note=note;render();toast('Updated');}catch(e){toast('Failed: '+(e.code||e.message),1);}
+}
+const WF=['pending','paid','rejected'];
+function payTxt(w){return w.method==='upi'?'UPI: '+esc(w.upi):'Bank: '+esc(w.bankHolder)+'<br>'+esc(w.bankName)+'<br>A/c '+esc(w.bankAcc)+'<br>IFSC '+esc(w.bankIfsc);}
+function wd(){
+ const list=D.wds.filter(w=>w.status===D.wf);
+ return '<div class="fl">'+WF.map(f=>'<button class="btn s '+(D.wf===f?'':'alt')+'" data-a="wf" data-v="'+f+'">'+f[0].toUpperCase()+f.slice(1)+' ('+D.wds.filter(w=>w.status===f).length+')</button>').join('')+'<span class="sp"></span><button class="btn s alt" data-a="csv">Download CSV</button></div>'+
+ (list.length?'<div class="tw"><table><tr><th>Date</th><th>Customer</th><th>Pay to</th><th>Amount</th><th>Customer balance</th><th>Status</th></tr>'+list.map(w=>'<tr><td>'+fdate(w.ts)+'</td><td><b>'+esc(w.name)+'</b><div class="mut sm">'+esc(w.phone)+'</div></td><td>'+payTxt(w)+'</td><td><b>'+fmt(w.amount)+'</b></td><td>'+fmt(userBal(w.uid))+'</td><td>'+(w.status==='pending'?'<button class="btn s" data-a="paid" data-v="'+w.id+'">Mark paid</button> <button class="btn s red" data-a="rej" data-v="'+w.id+'">Reject</button>':'<span class="pill '+(w.status==='paid'?'ok':'r')+'">'+w.status+'</span>'+(w.note?'<div class="mut sm">'+esc(w.note)+'</div>':''))+'</td></tr>').join('')+'</table></div>':'<div class="card c mut">Nothing here.</div>');
+}
+async function setWd(id,status){
+ const w=D.wds.find(x=>x.id===id);if(!w)return;let note='';
+ if(status==='rejected'){note=prompt('Reason (shown to customer):','')||'';}
+ else if(!confirm('Confirm you have paid '+fmt(w.amount)+' to '+w.name+'?'))return;
+ try{await db.collection('withdrawals').doc(id).update({status,note,doneTs:Date.now()});w.status=status;w.note=note;render();toast('Updated');}catch(e){toast('Failed: '+(e.code||e.message),1);}
+}
+function users(){
+ const q=D.q.toLowerCase(),list=D.users.filter(u=>!q||(u.name+' '+u.phone+' '+u.refCode).toLowerCase().includes(q)).sort((a,b)=>(b.ts||0)-(a.ts||0));
+ return '<div class="fl"><input class="inp" id="uq" style="max-width:320px;margin:0" placeholder="Search name, phone, code" value="'+esc(D.q)+'"></div><div class="tw"><table><tr><th>Name</th><th>Phone</th><th>Pay details</th><th>Earned</th><th>Balance</th><th>Referred by</th><th>Team</th><th>Joined</th></tr>'+
+ list.map(u=>{const by=D.users.find(x=>x.id===u.refUid);return '<tr><td><b>'+esc(u.name)+'</b><div class="mut sm">'+esc(u.email)+'</div></td><td>'+esc(u.phone)+'</td><td class="sm">'+(u.upi?'UPI: '+esc(u.upi)+'<br>':'')+(u.bankAcc?esc(u.bankName)+' '+esc(u.bankAcc)+' '+esc(u.bankIfsc):'')+'</td><td>'+fmt(sum(D.views.filter(v=>v.uid===u.id),'reward'))+'</td><td>'+fmt(userBal(u.id))+'</td><td>'+(by?esc(by.name):'-')+'</td><td>'+D.users.filter(x=>x.refUid===u.id).length+'</td><td>'+fdate(u.ts)+'</td></tr>';}).join('')+'</table></div>';
+}
+function set(){
+ const s=D.set,i=(id,l,v,ex)=>'<label class="l">'+l+'</label><input class="inp" id="'+id+'" value="'+esc(v==null?'':v)+'" '+(ex||'')+'>';
+ return '<div class="card" style="max-width:620px">'+i('sb','Website name',s.brand)+i('st','Telegram link (shown on the Telegram button)',s.telegram,'placeholder="https://t.me/yourchannel"')+
+ i('sw','WhatsApp number for Service button (with country code)',s.whatsapp,'placeholder="919876543210"')+i('sm','Message typed in WhatsApp',s.waMsg)+i('sx','Minimum withdrawal (₹)',s.minWithdraw,'type="number"')+
+ '<label class="l">Banner image URLs (one per line, optional)</label><textarea class="inp" id="sbn" rows="3">'+esc(s.banners||'')+'</textarea>'+i('sn','Notice shown to customers (optional)',s.notice)+
+ '<div class="err" id="err"></div><button class="btn full" data-a="saveset">Save settings</button></div>';
+}
+async function saveSet(){
+ const n={brand:$('sb').value.trim()||DEF.brand,telegram:$('st').value.trim(),whatsapp:$('sw').value.replace(/\D/g,''),waMsg:$('sm').value.trim()||'hii',minWithdraw:Math.max(0,+$('sx').value||0),banners:$('sbn').value.trim(),notice:$('sn').value.trim()};
+ try{await db.collection('settings').doc('app').set(n);D.set=n;render();toast('Settings saved');}catch(e){$('err').textContent='Could not save: '+(e.code||e.message);}
+}
+function csv(){
+ const rows=[['Date','Name','Phone','Method','UPI','Holder','Bank','Account','IFSC','Amount','Status']].concat(D.wds.map(w=>[new Date(w.ts).toISOString(),w.name,w.phone,w.method,w.upi,w.bankHolder,w.bankName,w.bankAcc,w.bankIfsc,w.amount,w.status]));
+ const t=rows.map(r=>r.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(',')).join('\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download='withdrawals.csv';a.click();
+}
+document.addEventListener('click',async e=>{
+ const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a,v=t.dataset.v;
+ switch(a){
+  case 'tab':D.tab=v;render();break;
+  case 'reload':try{await load();render();toast('Refreshed');}catch(x){toast('Failed',1);}break;
+  case 'out':auth.signOut();break;
+  case 'newad':adForm();break;case 'editad':adForm(D.ads.find(x=>x.id===v));break;case 'savead':saveAd(v);break;
+  case 'togad':{const ad=D.ads.find(x=>x.id===v);await db.collection('ads').doc(v).update({active:ad.active===false});ad.active=ad.active===false;render();break;}
+  case 'delad':if(confirm('Delete this ad? Its stats stay in history.')){await db.collection('ads').doc(v).delete();D.ads=D.ads.filter(x=>x.id!==v);render();}break;
+  case 'wf':D.wf=v;render();break;case 'paid':setWd(v,'paid');break;case 'rej':setWd(v,'rejected');break;case 'csv':csv();break;
+  case 'saveset':saveSet();break;case 'saveprod':saveProd();break;case 'oconf':setOrd(v,'confirmed');break;case 'orej':setOrd(v,'rejected');break;
+  case 'close':M.innerHTML='';break;
+  case 'bg':if(t===e.target)M.innerHTML='';break;
+ }
+});
+document.addEventListener('input',e=>{if(e.target.id==='uq'){D.q=e.target.value;const p=e.target.selectionStart;render();const n=$('uq');n.focus();n.setSelectionRange(p,p);}});
+window.__dbg={D};
+boot();
+})();
+</script></body></html>
