@@ -15,7 +15,7 @@
   W.okPhone = p => /^[6-9]\d{9}$/.test(p);
   W.DEF = { brand: 'ATM Rewards', telegram: '', whatsapp: '', waMsg: 'hii', minWithdraw: 50, banners: '', notice: '' };
   // Product shown in the store. Admin edits it in Dashboard -> Product (stored at settings/product).
-  W.DEFP = { name: 'Premium Pack', desc: '', price: 0, active: false, upi: '', payee: '' };
+  W.DEFP = { name: 'Premium Pack', desc: '', price: 0, img: '', active: false, upi: '', payee: '' };
   W.getProduct = async () => {
     try { const s = await db.collection('settings').doc('product').get(); return Object.assign({}, W.DEFP, s.exists ? s.data() : {}); }
     catch (e) { return Object.assign({}, W.DEFP); }

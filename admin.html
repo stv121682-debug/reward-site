@@ -105,7 +105,7 @@ function prodTab(){
  const p=D.prod,i=(id,l,v,ex)=>'<label class="l">'+l+'</label><input class="inp" id="'+id+'" value="'+esc(v==null?'':v)+'" '+(ex||'')+'>';
  return '<div class="card" style="max-width:620px"><b>Product &amp; price</b><div class="mut sm" style="margin:4px 0 10px">Set the price any time. Customers always see the current price. Set it to 0 to make the product free.</div>'+
   i('pn','Product name',p.name)+'<label class="l">Description</label><textarea class="inp" id="pd" rows="3">'+esc(p.desc||'')+'</textarea>'+
-  i('pp','Price (₹) – 0 = free',p.price,'type="number" step="0.01" min="0"')+
+  i('pi','Product image URL (blank = ATM banner)',p.img||'')+i('pp','Price (₹) – 0 = free',p.price,'type="number" step="0.01" min="0"')+
   '<div class="mut sm" style="margin-bottom:8px">Payments go to the UPI ID set in your PayConfirm server.</div>'+
   '<label class="row" style="margin:8px 0"><input type="checkbox" id="pa" '+(p.active===true?'checked':'')+'><span class="b">Show product in the customer app</span></label>'+
   '<div class="err" id="err"></div><button class="btn full" data-a="saveprod">Save product</button></div>';
@@ -113,7 +113,7 @@ function prodTab(){
 async function saveProd(){
  const price=Math.round(parseFloat($('pp').value)*100)/100,er=$('err');er.textContent='';
  if(!(price>=0))return void(er.textContent='Enter a valid price (0 or more).');
- const n={name:$('pn').value.trim()||DEFP.name,desc:$('pd').value.trim(),price,active:$('pa').checked};
+ const n={name:$('pn').value.trim()||DEFP.name,img:$('pi').value.trim(),desc:$('pd').value.trim(),price,active:$('pa').checked};
  try{await db.collection('settings').doc('product').set(n);D.prod=n;render();toast('Product saved');}catch(e){er.textContent='Could not save: '+(e.code||e.message);}
 }
 function ordTab(){

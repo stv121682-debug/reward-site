@@ -13,7 +13,7 @@
 .slides::-webkit-scrollbar{display:none}
 .slide{flex:0 0 100%;scroll-snap-align:center;border-radius:16px;background:linear-gradient(135deg,var(--g),var(--g2));color:#fff;display:flex;align-items:center;padding:14px;min-height:150px;overflow:hidden}
 .slide .tx{flex:1.1}.slide .tx b{font-size:20px;line-height:1.15;display:block}.slide .tx span{font-size:12.5px;opacity:.9;display:block;margin-top:6px}
-.slide svg{flex:1;max-width:46%;height:auto}.slide img{width:100%;height:150px;object-fit:cover;border-radius:12px}
+.slide svg{flex:1;max-width:46%;height:auto}.slide img{width:100%;height:auto;max-height:190px;object-fit:cover;border-radius:12px}
 .dots{display:flex;justify-content:center;gap:6px;margin:6px 0}.dots i{width:7px;height:7px;border-radius:50%;background:var(--line)}.dots i.on{background:var(--g);width:18px;border-radius:5px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:10px 0}
 .stats div{background:var(--g);color:#fff;border-radius:14px;padding:12px 6px;text-align:center}.stats b{display:block;font-size:17px}.stats span{font-size:12px;opacity:.85}
@@ -228,7 +228,8 @@ function render(){
  window.scrollTo(0,0);
 }
 function slidesHTML(){
- const urls=String(S.set.banners||'').split(/\n+/).map(x=>x.trim()).filter(x=>/^https?:\/\//i.test(x));
+ let urls=String(S.set.banners||'').split(/\n+/).map(x=>x.trim()).filter(x=>/^https?:\/\//i.test(x));
+ if(!urls.length)urls=['atm-banner.png'];
  const T=[['Watch sponsored videos','Short videos from real advertisers.'],['Earn rewards daily','New videos are added by the team.'],['Withdraw to UPI or bank','Request a payout any time you reach the minimum.']];
  const sl=urls.length?urls.map(u=>'<div class="slide" style="padding:0"><img src="'+esc(u)+'" alt=""></div>').join(''):
   T.map((t,i)=>'<div class="slide"><div class="tx"><b>'+t[0]+'</b><span>'+t[1]+'</span></div>'+atmSvg(i)+'</div>').join('');
@@ -369,19 +370,20 @@ async function savePay(){
 }
 
 /* ---------- store: dynamic product price, UPI pay + confirm ---------- */
+const pimg=p=>'<img src="'+esc(/^https?:\/\//i.test(p.img||'')?p.img:'atm-banner.png')+'" alt="" style="width:100%;border-radius:12px;display:block;margin-bottom:10px">';
 const priceOf=p=>Math.round((+p.price||0)*100)/100;
 const priceTxt=p=>priceOf(p)>0?fmt(priceOf(p)):'FREE';
 const recentPending=()=>S.orders.some(o=>o.status==='pending'&&o.via==='payconfirm'&&Date.now()-o.ts<14*60000);
 function productCard(){
  const p=S.prod;if(!p||p.active!==true)return '';
  const own=S.orders.some(o=>o.status==='confirmed');
- return '<h3>Store</h3><div class="card row sp"><div style="min-width:0"><b>'+esc(p.name)+'</b><div class="mut sm">'+esc(p.desc||'')+'</div></div><div class="c" style="flex:none"><div class="b" style="color:var(--g);font-size:19px;margin-bottom:4px">'+priceTxt(p)+'</div>'+
-  (own?'<span class="pill ok">Purchased ✓</span>':'<button class="btn s" data-a="buy">'+(priceOf(p)>0?(recentPending()?'Resume payment':'Buy now'):'Get free')+'</button>')+'</div></div>';
+ return '<h3>Store</h3><div class="card">'+pimg(p)+'<div class="row sp"><div style="min-width:0"><b>'+esc(p.name)+'</b><div class="mut sm">'+esc(p.desc||'')+'</div></div><div class="c" style="flex:none"><div class="b" style="color:var(--g);font-size:19px;margin-bottom:4px">'+priceTxt(p)+'</div>'+
+  (own?'<span class="pill ok">Purchased ✓</span>':'<button class="btn s" data-a="buy">'+(priceOf(p)>0?(recentPending()?'Resume payment':'Buy now'):'Get free')+'</button>')+'</div></div></div>';
 }
 function openBuy(){
  const p=S.prod;if(!p||p.active!==true)return void toast('Not available right now',1);
  if(S.orders.some(o=>o.status==='confirmed'))return void toast('You already own this');
- if(priceOf(p)<=0)return void modal(mh(esc(p.name))+'<p>'+esc(p.desc||'')+'</p><div class="card c"><div class="mut sm">Price</div><div class="code" style="letter-spacing:0">FREE</div></div><div class="err" id="berr"></div><button class="btn full" data-a="dobuy">Get it free</button>');
+ if(priceOf(p)<=0)return void modal(mh(esc(p.name))+pimg(p)+'<p>'+esc(p.desc||'')+'</p><div class="card c"><div class="mut sm">Price</div><div class="code" style="letter-spacing:0">FREE</div></div><div class="err" id="berr"></div><button class="btn full" data-a="dobuy">Get it free</button>');
  modal(mh(esc(p.name))+'<div class="card c mut">Preparing your payment…</div>');startPay();
 }
 async function doBuy(){ // free product only
